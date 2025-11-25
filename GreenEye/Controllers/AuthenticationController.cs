@@ -6,5 +6,6 @@ namespace GreenEye.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
+
     }
 }
