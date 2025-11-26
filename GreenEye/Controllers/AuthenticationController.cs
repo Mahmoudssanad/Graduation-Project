@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
-namespace GreenEye.Controllers
+﻿namespace GreenEye.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

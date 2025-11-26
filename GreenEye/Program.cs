@@ -7,6 +7,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//Services
+builder.Services.AddHttpClient<SimulationService>();
+builder.Services.AddScoped<ISimulationService,SimulationService>();
+
 var app = builder.Build();
 
 app.UseSwagger();
