@@ -1,11 +1,8 @@
-﻿using GreenEye.Enums;
-using Microsoft.AspNetCore.Identity;
-
-namespace GreenEye.Data.Seeder
+﻿namespace GreenEye.Data.Seeder
 {
-    public class SeedRole
+    public static class SeedRole
     {
-        public async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
+        public async static Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
             var roles = Enum.GetNames(typeof(Roles));
 

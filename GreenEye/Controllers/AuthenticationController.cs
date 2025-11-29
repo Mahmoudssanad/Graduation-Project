@@ -1,9 +1,4 @@
-﻿using GreenEye.Dto;
-using GreenEye.Dto.Authentication;
-using GreenEye.Service.IService;
-using Microsoft.AspNetCore.Mvc;
-
-namespace GreenEye.Controllers
+﻿namespace GreenEye.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

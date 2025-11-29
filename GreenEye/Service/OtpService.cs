@@ -1,12 +1,4 @@
-﻿using GreenEye.Data;
-using GreenEye.Dto;
-using GreenEye.Dto.Authentication;
-using GreenEye.Enums;
-using GreenEye.Models;
-using GreenEye.Service.IService;
-using Microsoft.EntityFrameworkCore;
-
-namespace GreenEye.Service
+﻿namespace GreenEye.Service
 {
     public class OtpService(AppDbContext _context, IEmailService _emailService) : IOtpService
     {

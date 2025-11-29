@@ -1,12 +1,4 @@
-﻿using GreenEye.Data;
-using GreenEye.Dto;
-using GreenEye.Dto.Authentication;
-using GreenEye.Enums;
-using GreenEye.Models;
-using GreenEye.Service.IService;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

@@ -1,11 +1,3 @@
-using GreenEye.Data;
-using GreenEye.Enums;
-using GreenEye.Models;
-using GreenEye.Service;
-using GreenEye.Service.IService;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
 #region Add services to container
@@ -34,11 +26,15 @@ builder.Services.AddSession();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<ISimulationService, SimulationService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpClient<SimulationService>();
+
 #endregion
+
 
 var app = builder.Build();
 
@@ -48,6 +44,7 @@ using (var scope = app.Services.CreateScope())
     await SeedRolesAsync(roleManager);
 }
 
+// save roles enum to AspNetRole table in database
 async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
 {
     var roles = Enum.GetNames(typeof(Roles));
