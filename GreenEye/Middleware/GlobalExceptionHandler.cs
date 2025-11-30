@@ -1,5 +1,4 @@
-﻿using Microsoft.IdentityModel.SecurityTokenService;
-using OpenQA.Selenium;
+﻿using OpenQA.Selenium;
 using System.Net;
 
 namespace GreenEye.Middleware
@@ -29,9 +28,9 @@ namespace GreenEye.Middleware
                     statusCode = HttpStatusCode.NotFound;
                     break;
 
-                case BadRequestException:
-                    statusCode = HttpStatusCode.BadRequest;
-                    break;
+                //case BadRequestException:
+                //    statusCode = HttpStatusCode.BadRequest;
+                //    break;
 
                 case UnauthorizedAccessException:
                     statusCode = HttpStatusCode.Unauthorized;

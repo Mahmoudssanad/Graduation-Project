@@ -9,7 +9,7 @@
             try
             {
                 var getOtp = await _context.OTPs.FirstOrDefaultAsync(x => x.Email == email);
-                if(getOtp  != null)
+                if(getOtp != null)
                 {
                     getOtp.Code = code;
                     getOtp.IsUsed = false;
@@ -42,7 +42,7 @@
         public async Task<GeneralResponse<string>> ValidateOtp(VerifyOtpDto model)
         {
 
-            var otp = await _context.OTPs.FirstOrDefaultAsync(x => x.Email == model.Email );
+            var otp = await _context.OTPs.FirstOrDefaultAsync(x => x.Email == model.Email);
 
             if (otp == null)
                 return new GeneralResponse<string>
@@ -58,11 +58,18 @@
                     Message = "OTP already used"
                 };
 
-            if (otp.ExpireAt < DateTime.UtcNow)
+            if(model.Code != otp.Code)
                 return new GeneralResponse<string>
                 {
                     IsSuccess = false,
-                    Message = "OTP expired"
+                    Message = "OTP invalid or expired"
+                };
+
+            if (otp.ExpireAt < DateTime.Now)
+                return new GeneralResponse<string>
+                {
+                    IsSuccess = false,
+                    Message = "OTP invalid or expired"
                 };
 
             otp.IsUsed = true;
@@ -75,7 +82,15 @@
             };
         }
 
-        
+        public async Task<GeneralResponse<string>> RemoveOtp(string email, string code)
+        {
+            var otp = await _context.OTPs.Where(x => x.Email == email && x.Code == code).FirstOrDefaultAsync();
+            if (otp == null)
+                return new GeneralResponse<string> { IsSuccess = false, Message = "OTP not found already" };
 
+            _context.OTPs.Remove(otp);
+            await _context.SaveChangesAsync();
+            return new GeneralResponse<string> { IsSuccess = true, Message = "OTP deleted!" };
+        }
     }
 }

@@ -13,7 +13,7 @@
 
                 return result.IsSuccess ? Ok(result) : BadRequest(result);
             }
-            return BadRequest();
+            return BadRequest(ModelState);
         }
 
         [HttpPost("verify-otp")]

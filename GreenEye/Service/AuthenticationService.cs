@@ -1,5 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -9,29 +9,45 @@ namespace GreenEye.Service
     public class AuthenticationService(
         UserManager<ApplicationUser> _userManager,
         IOtpService _otpService,
-        IHttpContextAccessor _httpContext,
         IConfiguration configuration,
         RoleManager<IdentityRole> _roleManager,
-        AppDbContext _context
+        AppDbContext _context,
+        IDistributedCache _cache
         ) 
         : IAuthenticationService
     {
 
         public async Task<GeneralResponse<string>> RegisterAsync(RegisterDto model)
         {
-            var getUserByEmail = await _userManager.FindByEmailAsync(model.Email!);
-            if (getUserByEmail != null)
-                return new GeneralResponse<string> { IsSuccess = false, Message = "Can not create account for this email"};
-
-            // Save register data in session(Serialize)
-            _httpContext.HttpContext?.Session.SetString("RegisterData", JsonConvert.SerializeObject(model));
-
-            // Generate and send OTP
-            await _otpService.GenerateAndSendOtp(model.Email!, OtpType.EmailVerification);
-            return new GeneralResponse<string>
+            try
             {
-                IsSuccess = true, Message = "OTP send to your email, check your email."
-            };
+                var getUserByEmail = await _userManager.FindByEmailAsync(model.Email!);
+                if (getUserByEmail != null)
+                    return new GeneralResponse<string> { IsSuccess = false, Message = "Can not create account for this email" };
+
+                var cacheKey = "register_data";
+
+                // Serialize register data
+                var serialized = JsonSerializer.Serialize(model);
+
+                // Set register data to cacheing
+                await _cache.SetStringAsync(cacheKey, serialized, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                });
+
+                // Generate and send OTP
+                await _otpService.GenerateAndSendOtp(model.Email!, OtpType.EmailVerification);
+                return new GeneralResponse<string>
+                {
+                    IsSuccess = true,
+                    Message = "OTP send to your email, check your email."
+                };
+            }
+            catch(Exception ex)
+            {
+                return new GeneralResponse<string> { IsSuccess = false, Message = ex.Message };
+            }
         }
 
         public async Task<GeneralResponse<string>> VerifyOTP(VerifyOtpDto verifyOtpDto)
@@ -50,12 +66,13 @@ namespace GreenEye.Service
 
                     if (!result.IsSuccess)
                         return result;
-
+                    await _otpService.RemoveOtp(verifyOtpDto.Email!, verifyOtpDto.Code!);
                     await transaction.CommitAsync();
                     return result;
                 }
                 else if (verifyOtpDto.Type == OtpType.ResetPassword)
                 {
+                    await _otpService.RemoveOtp(verifyOtpDto.Email!, verifyOtpDto.Code!);
                     await transaction.CommitAsync();
                     return new GeneralResponse<string> { IsSuccess = true, Message = "Verfiy email for reset password successfully" };
                 }
@@ -80,85 +97,100 @@ namespace GreenEye.Service
 
         public async Task<GeneralResponse<string>> CreateUserAsync()
         {
-            var registerDataJson = _httpContext.HttpContext?.Session.GetString("RegisterData");
+            try
+            {
+                //var registerDataJson = _httpContext.HttpContext?.Session.GetString("RegisterData");
+                var cacheKey = "register_data";
 
-            if (registerDataJson == null)
+                var chachedData = await _cache.GetStringAsync(cacheKey);
+                if (chachedData == null)
+                    return new GeneralResponse<string> { IsSuccess = false, Message = "Data become not found rgister again" };
+
+                var data = JsonSerializer.Deserialize<RegisterDto>(chachedData);
+
+                var user = new ApplicationUser
+                {
+                    Email = data!.Email,
+                    UserName = data.Name,
+                    PhoneNumber = data.Phone,
+                };
+                // Create user
+                var result = await _userManager.CreateAsync(user, data.Password!);
+
+                if (result.Succeeded)
+                {
+                    var roleName = Enum.GetName(typeof(Roles), data.Roles);
+
+                    if (string.IsNullOrEmpty(roleName))
+                        return new GeneralResponse<string> { IsSuccess = false, Message = "Invalid role" };
+
+                    // Role check
+                    var roleExists = await _roleManager.RoleExistsAsync(roleName);
+                    if (!roleExists)
+                        return new GeneralResponse<string> { IsSuccess = false, Message = "Role dose not exist" };
+
+                    // Add role for user
+                    await _userManager.AddToRoleAsync(user, roleName);
+                    return new GeneralResponse<string>{ IsSuccess = true, Message = "Create account successfully" };
+                }
+
+                // get Identity errors
+                var errors = string.Join(" | ", result.Errors.Select(e => e.Description));
+
                 return new GeneralResponse<string>
                 {
                     IsSuccess = false,
-                    Message = "Error getting data from session"
-                };
-
-            var registerData = JsonConvert.DeserializeObject<RegisterDto>(registerDataJson);
-
-            var user = new ApplicationUser
-            {
-                Email = registerData!.Email,
-                UserName = registerData.Name,
-                PhoneNumber = registerData.Phone,
-            };
-
-            var result = await _userManager.CreateAsync(user, registerData.Password!);
-
-
-            if (result.Succeeded)
-            {
-                var roleName = Enum.GetName(typeof(Roles), registerData.Roles);
-
-                if (string.IsNullOrEmpty(roleName))
-                    return new GeneralResponse<string>
-                    {
-                        IsSuccess = false,
-                        Message = "Invalid role"
-                    };
-
-                var roleExists = await _roleManager.RoleExistsAsync(roleName);
-                if (!roleExists)
-                    return new GeneralResponse<string> { IsSuccess = false, Message = "Role dose not exist" };
-
-                // Add role for user
-                await _userManager.AddToRoleAsync(user, roleName);
-                return new GeneralResponse<string>
-                {
-                    IsSuccess = true,
-                    Message = "Create account successfully"
+                    Message = errors
                 };
             }
-
-            // get Identity errors
-            var errors = string.Join(" | ", result.Errors.Select(e => e.Description));
-
-            return new GeneralResponse<string>
+            catch(Exception ex)
             {
-                IsSuccess = false,
-                Message = errors
-            };
+                return new GeneralResponse<string> { IsSuccess = false, Message = ex.Message };
+            }
+            
         }
 
         public async Task<GeneralResponse<string>> ForgetPassword(string email)
         {
-            if(email is not null)
+            try
             {
-                var user = await _userManager.FindByEmailAsync(email);
-                if (user == null)
-                    return new GeneralResponse<string> { IsSuccess = false, Message = "User not found" };
+                if (email is not null)
+                {
+                    var user = await _userManager.FindByEmailAsync(email);
+                    if (user == null)
+                        return new GeneralResponse<string> { IsSuccess = false, Message = "User not found" };
 
-                await _otpService.GenerateAndSendOtp(email, Enums.OtpType.ResetPassword);
-                return new GeneralResponse<string> { IsSuccess = true, Message = "Check for email and submit otp" };
+                    await _otpService.GenerateAndSendOtp(email, Enums.OtpType.ResetPassword);
+                    return new GeneralResponse<string> { IsSuccess = true, Message = "Check for email and submit otp" };
+                }
+                return new GeneralResponse<string> { IsSuccess = false, Message = "User not found" };
             }
-            return new GeneralResponse<string> { IsSuccess = false, Message = "User not found" };
+            catch(Exception ex)
+            {
+                return new GeneralResponse<string> { IsSuccess = false, Message = ex.Message };
+            }
+            
         }
 
         public async Task<bool> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
         {
-            var user = await _userManager.FindByEmailAsync(resetPasswordDto.Email!);
-            if (user is null)
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(resetPasswordDto.Email!);
+                if (user is null)
+                    return false;
+
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                var resetPassword = await _userManager.ResetPasswordAsync(user, token, resetPasswordDto.Password!);
+                return resetPassword.Succeeded ? true : false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
                 return false;
-
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-            var resetPassword = await _userManager.ResetPasswordAsync(user, token, resetPasswordDto.Password!);
-            return resetPassword.Succeeded ? true : false;
+                throw;
+            }
 
         }
 
@@ -227,22 +259,54 @@ namespace GreenEye.Service
 
         public async Task<GeneralResponse<string>> ResendOtpAsync(ResendOtpDto resendOtpDto)
         {
-            var user = await _userManager.FindByEmailAsync(resendOtpDto.Email!);
-            if (user == null) return new GeneralResponse<string> { IsSuccess = false, Message = "User not found" };
-
-            if (resendOtpDto.Email == null)
-                return new GeneralResponse<string> { IsSuccess = false, Message = "Required email" };
-
-            if(string.IsNullOrEmpty(resendOtpDto.Type.ToString()))
-                return new GeneralResponse<string> { IsSuccess = false, Message = "Type Required" };
-
-            await _otpService.GenerateAndSendOtp(resendOtpDto.Email!, resendOtpDto.Type);
-
-            return new GeneralResponse<string>
+            try
             {
-                IsSuccess = true,
-                Message = "OTP resent successfully"
-            };
+                var user = await _userManager.FindByEmailAsync(resendOtpDto.Email!);
+
+                if (resendOtpDto.Type == OtpType.EmailVerification)
+                {
+                    if(user != null)
+                        return new GeneralResponse<string> { IsSuccess = false, Message = "this email already have account" };
+
+                    var chachedData = await _cache.GetStringAsync("register_data");
+                    if (chachedData == null)
+                        return new GeneralResponse<string> { IsSuccess = false, Message = "Data become expiried. Rgister again" };
+
+                    var data = JsonSerializer.Deserialize<ResendOtpDto>(chachedData);
+                    if(resendOtpDto.Email != data.Email)
+                        return new GeneralResponse<string> { IsSuccess = false, Message = "Incorrect match email" };
+
+                    await _otpService.GenerateAndSendOtp(data!.Email!, data.Type);
+
+                    return new GeneralResponse<string>
+                    {
+                        IsSuccess = true,
+                        Message = "OTP resent successfully"
+                    };
+                }
+
+                if (user == null) return new GeneralResponse<string> { IsSuccess = false, Message = "User not found" };
+
+                if (resendOtpDto.Email == null)
+                    return new GeneralResponse<string> { IsSuccess = false, Message = "Required email" };
+
+                if (string.IsNullOrEmpty(resendOtpDto.Type.ToString()))
+                    return new GeneralResponse<string> { IsSuccess = false, Message = "Type Required" };
+
+                
+
+                await _otpService.GenerateAndSendOtp(resendOtpDto.Email!, resendOtpDto.Type);
+
+                return new GeneralResponse<string>
+                {
+                    IsSuccess = true,
+                    Message = "OTP resent successfully"
+                };
+            }
+            catch(Exception ex)
+            {
+                return new GeneralResponse<string> { IsSuccess = false, Message = ex.Message};
+            }
         }
     }
 }
