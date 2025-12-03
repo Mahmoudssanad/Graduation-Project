@@ -18,5 +18,7 @@
         public double K_Adequacy { get; set; }
         [JsonPropertyName("ph_value")]
         public double PhValue { get; set; }
+        [JsonPropertyName("region_feedback")]
+        public string? RegionFeedback { get; set; }
     }
 }

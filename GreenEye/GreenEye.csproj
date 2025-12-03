@@ -23,4 +23,10 @@
 	  <Folder Include="Reposetory\IRepository\" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="Service\CropSimulationEngine.py">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>

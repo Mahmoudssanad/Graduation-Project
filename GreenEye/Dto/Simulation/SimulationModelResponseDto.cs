@@ -20,7 +20,7 @@
         public List<double> Days { get; set; } = new List<double>();
         
         [JsonPropertyName("growth_stages")]
-        public List<double> GrowthStages { get; set; } = new List<double>();
+        public List<string> GrowthStages { get; set; } = new List<string>();
         [JsonPropertyName("stage_summary")]
         public Dictionary<string, StageSummaryDto> StageSummary { get; set; } = new Dictionary<string, StageSummaryDto>();
         [JsonPropertyName("soil_assessment")]
@@ -34,7 +34,10 @@
         [JsonPropertyName("fertilizer_needs")]
         public FertilizerNeedsDto FertilizerNeeds { get; set; } = new FertilizerNeedsDto();
         public StressFactorsDto StressFactors { get; set; } = new StressFactorsDto();
+        [JsonPropertyName("gdd")]
         public List<double> GrowingDegreeDays { get; set; } = new List<double>();
+        public string? QueryTimestamp { get; set; }
+        public string? LocationName { get; set; }
 
     }
 }
