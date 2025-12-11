@@ -5,8 +5,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Middleware\GlobalExceptionHandler.cs~RF91b43eab.TMP" />
+  </ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="15.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.11" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.11" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.11" />
@@ -16,6 +21,10 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.9" />
 		<PackageReference Include="Selenium.WebDriver" Version="4.38.0" />
+		<PackageReference Include="Serilog" Version="4.3.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.5.0" />
 	</ItemGroup>
