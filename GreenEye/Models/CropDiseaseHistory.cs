@@ -9,5 +9,6 @@
         public string? Remedy { get; set; }
         public string? ImageUrl { get; set; }
         public DateTime SentAt { get; set; }
+        public string? Confidence { get; set; }
     }
 }

@@ -2,16 +2,19 @@
 {
     public class CropDiseaseModelResponseDto
     {
-        [JsonPropertyName("predicateddisease")]
+        [JsonPropertyName("Predicted Disease")]
         public string? PredicatedDisease { get; set; }
 
-        [JsonPropertyName("cause")]
+        [JsonPropertyName("Cause")]
         public string? Cause { get; set; }
 
-        [JsonPropertyName("peakseason")]
+        [JsonPropertyName("Peak Season")]
         public string? PeakSeason { get; set; }
 
-        [JsonPropertyName("remedy")]
+        [JsonPropertyName("Remedy")]
         public string? Remedy { get; set; }
+
+        [JsonPropertyName("Confidence")]
+        public string? Confidence { get; set; }
     }
 }
