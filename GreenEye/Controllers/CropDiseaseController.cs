@@ -44,6 +44,7 @@ namespace GreenEye.Controllers
 
         }
 
+
         [HttpGet("history")]
         public async Task<IActionResult> GetHistory()
         {
@@ -63,6 +64,7 @@ namespace GreenEye.Controllers
                 return StatusCode(500, new { Message = $"Internal server error: {ex.Message}" });
             }
         }
+
 
         [HttpDelete("history/{id}")]
         public async Task<IActionResult> DeleteHistory(int id)

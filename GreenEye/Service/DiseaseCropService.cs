@@ -49,7 +49,7 @@ namespace GreenEye.Service
             // Save in database
             var cropDisease = new CropDiseaseHistory
             {
-                UserId = userId,                 // من الـ Controller
+                UserId = userId,                 
                 ImageUrl = imagePath.Data,       // الصورة عشان تظهر في History
                 PredicatedDisease = result!.PredicatedDisease!,
                 Cause = result.Cause!,
@@ -57,7 +57,7 @@ namespace GreenEye.Service
                 Remedy = result.Remedy!,
                 Confidence = confidenceValue,
                 SentAt = DateTime.Now,
-                IsDeleted = false                   // جاهز للـ Soft Delete
+                IsDeleted = false                
             };
             await _context.CropDiseaseHistories.AddAsync(cropDisease);
             await _context.SaveChangesAsync();
