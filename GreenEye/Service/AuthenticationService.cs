@@ -27,6 +27,27 @@ namespace GreenEye.Service
 
                 var cacheKey = "register_data";
 
+                var user = new ApplicationUser
+                {
+                    Email = model.Email,
+                    UserName = model.Name,
+                    PhoneNumber = model.Phone
+                };
+
+                var checkUsernameValidate = await _userManager.UserValidators.First().ValidateAsync(_userManager, user);
+                var checkPasswordValidate = await _userManager.PasswordValidators.First().ValidateAsync(_userManager, user, model.Password);
+
+                if(!checkUsernameValidate.Succeeded)
+                {
+                    foreach(var error in checkUsernameValidate.Errors)
+                        return new GeneralResponse<string> { IsSuccess = false, Message = $"{error.Description}" };
+                }
+                if (!checkPasswordValidate.Succeeded)
+                {
+                    foreach (var error in checkPasswordValidate.Errors)
+                        return new GeneralResponse<string> { IsSuccess = false, Message = $"{error.Description}" };
+                }
+
                 // Serialize register data
                 var serialized = JsonSerializer.Serialize(model);
 
@@ -47,6 +68,7 @@ namespace GreenEye.Service
             catch(Exception ex)
             {
                 return new GeneralResponse<string> { IsSuccess = false, Message = ex.Message };
+                throw;
             }
         }
 
@@ -273,7 +295,7 @@ namespace GreenEye.Service
                         return new GeneralResponse<string> { IsSuccess = false, Message = "Data become expiried. Rgister again" };
 
                     var data = JsonSerializer.Deserialize<ResendOtpDto>(chachedData);
-                    if(resendOtpDto.Email != data.Email)
+                    if(resendOtpDto.Email != data!.Email)
                         return new GeneralResponse<string> { IsSuccess = false, Message = "Incorrect match email" };
 
                     await _otpService.GenerateAndSendOtp(data!.Email!, data.Type);

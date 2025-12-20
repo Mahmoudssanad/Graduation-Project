@@ -1,4 +1,6 @@
-﻿namespace GreenEye.Controllers
+﻿using System.Threading.Tasks;
+
+namespace GreenEye.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -10,20 +12,30 @@
         {
             _simulationService = simulationService;
         }
-
         [HttpGet]
         public async Task<ActionResult<GeneralResponse<SimulationModelResponseDto>>> GetSimulation(double longitude, double latitude, string CropName)
         {
+            if (string.IsNullOrWhiteSpace(CropName))
+            {
+                return BadRequest(new GeneralResponse<SimulationModelResponseDto>
+                {
+                    IsSuccess = false,
+                    Message = "Crop Name is required."
+                });
+            }
+
             try
             {
                 var result = await _simulationService.GetSimulationForCropInLocation(longitude, latitude, CropName);
 
                 if (result == null)
+                {
                     return Ok(new GeneralResponse<SimulationModelResponseDto>
                     {
                         IsSuccess = false,
-                        Message = "Invalid Operation Please Try Again!"
+                        Message = "Failed to run simulation. Please check inputs or external data."
                     });
+                }
 
                 return Ok(new GeneralResponse<SimulationModelResponseDto>
                 {
@@ -31,12 +43,12 @@
                     Data = result
                 });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(new GeneralResponse<SimulationModelResponseDto>
                 {
                     IsSuccess = false,
-                    Message = ex.Message
+                    Message = "An error occurred: " + ex.Message
                 });
             }
         }

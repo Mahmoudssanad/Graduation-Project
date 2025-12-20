@@ -1,6 +1,4 @@
-﻿using GreenEye.Enums;
-
-namespace GreenEye.Models
+﻿namespace GreenEye.Models
 {
     public class OTP
     {
