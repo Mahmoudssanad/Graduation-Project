@@ -1,4 +1,6 @@
 ﻿using GreenEye.Dto.Disease;
+using GreenEye.Dto.Responses;
+using System.Globalization;
 using System.Text;
 
 namespace GreenEye.Service
@@ -34,6 +36,16 @@ namespace GreenEye.Service
             // CropDiseaseModelResponseDto من object الي content لل Deserialize هنعمل 
             var result = JsonSerializer.Deserialize<CropDiseaseModelResponseDto>(content);
 
+            //var confidenceValue = 0.0;
+
+            //if (!string.IsNullOrEmpty(result.Confidence))
+            //{
+            //    confidenceValue = double.Parse(
+            //        result.Confidence.Replace("%", ""),
+            //        CultureInfo.InvariantCulture
+            //    );
+            //}
+
             // Save in database
             var cropDisease = new CropDiseaseHistory
             {
@@ -51,7 +63,7 @@ namespace GreenEye.Service
                 Cause = result.Cause!,
                 PeakSeason = result.PeakSeason!,
                 Remedy = result.Remedy!,
-
+                //Confidence = confidenceValue,
                 Confidence = double.Parse(result.Confidence!), // تحويل string لـ double
                 SentAt = DateTime.Now,
                 IsDeleted = false                   // جاهز للـ Soft Delete

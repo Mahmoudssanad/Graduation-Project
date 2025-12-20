@@ -1,4 +1,6 @@
-﻿namespace GreenEye.Service
+﻿using GreenEye.Dto.Responses;
+
+namespace GreenEye.Service
 {
     public class OtpService(AppDbContext _context, IEmailService _emailService) : IOtpService
     {
@@ -35,7 +37,7 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                throw new Exception("Failed to send OTP email", ex);
             }
         }
 
