@@ -8,7 +8,7 @@ namespace GreenEye.Controllers
 {
     [Route("api/[controller]")] 
     [ApiController]
-    [Authorize] // حماية جميع الـ Endpoints
+    [Authorize] 
     public class CropDiseaseController : ControllerBase
     {
         private readonly ICropDiseaseService _cropDiseaseService;
@@ -18,8 +18,6 @@ namespace GreenEye.Controllers
             _cropDiseaseService = cropDiseaseService;
         }
 
-        // 1️. رفع صورة وتشخيص المرض
-        // POST /api/CropDisease
         [HttpPost]
         public async Task<IActionResult> CropDisease(IFormFile image)
         {
@@ -46,8 +44,6 @@ namespace GreenEye.Controllers
 
         }
 
-        // 2️. جلب History لكل User
-        // GET /api/CropDisease/history
         [HttpGet("history")]
         public async Task<IActionResult> GetHistory()
         {
@@ -68,8 +64,6 @@ namespace GreenEye.Controllers
             }
         }
 
-        // 3️. حذف عنصر من History (Soft Delete)
-        // DELETE /api/CropDisease/history/{id}
         [HttpDelete("history/{id}")]
         public async Task<IActionResult> DeleteHistory(int id)
         {

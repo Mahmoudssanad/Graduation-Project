@@ -36,35 +36,26 @@ namespace GreenEye.Service
             // CropDiseaseModelResponseDto من object الي content لل Deserialize هنعمل 
             var result = JsonSerializer.Deserialize<CropDiseaseModelResponseDto>(content);
 
-            //var confidenceValue = 0.0;
+            var confidenceValue = 0.0;
 
-            //if (!string.IsNullOrEmpty(result.Confidence))
-            //{
-            //    confidenceValue = double.Parse(
-            //        result.Confidence.Replace("%", ""),
-            //        CultureInfo.InvariantCulture
-            //    );
-            //}
+            if (!string.IsNullOrEmpty(result.Confidence))
+            {
+                confidenceValue = double.Parse(
+                    result.Confidence.Replace("%", ""),
+                    CultureInfo.InvariantCulture
+                );
+            }
 
             // Save in database
             var cropDisease = new CropDiseaseHistory
             {
-                ////ImageUrl = imagePath.Data,
-                //Cause = result!.Cause,
-                //PeakSeason = result.PeakSeason,
-                //PredicatedDisease = result.PredicatedDisease,
-                //Remedy = result.Remedy,
-                //SentAt = DateTime.Now,
-                //Confidence = result.Confidence
                 UserId = userId,                 // من الـ Controller
                 ImageUrl = imagePath.Data,       // الصورة عشان تظهر في History
-
                 PredicatedDisease = result!.PredicatedDisease!,
                 Cause = result.Cause!,
                 PeakSeason = result.PeakSeason!,
                 Remedy = result.Remedy!,
-                //Confidence = confidenceValue,
-                Confidence = double.Parse(result.Confidence!), // تحويل string لـ double
+                Confidence = confidenceValue,
                 SentAt = DateTime.Now,
                 IsDeleted = false                   // جاهز للـ Soft Delete
             };
@@ -82,8 +73,8 @@ namespace GreenEye.Service
             try
             {
                 var history = await _context.CropDiseaseHistories
-                    .Where(h => h.UserId == userId && !h.IsDeleted) // فقط الـ User الحالي واللي مش متمسح
-                    .OrderByDescending(h => h.SentAt)             // أحدث أولاً
+                    .Where(h => h.UserId == userId && !h.IsDeleted)  // المستخدم الحالي وكل اللي مش ممسوح
+                    .OrderByDescending(h => h.SentAt)             // بيعرض الجديد الاول
                     .Select(h => new CropDiseaseHistoryDto       // تحويل للـ DTO للعرض
                     {
                         Id = h.Id,
@@ -118,7 +109,6 @@ namespace GreenEye.Service
         {
             try
             {
-                // نجيب العنصر من الداتابيز
                 var history = await _context.CropDiseaseHistories
                     .FirstOrDefaultAsync(h => h.Id == historyId && h.UserId == userId);
 
