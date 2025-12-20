@@ -1,5 +1,4 @@
-﻿using GreenEye.Dto;
-using GreenEye.Dto.Authentication;
+﻿using GreenEye.Dto.Responses;
 
 namespace GreenEye.Service.IService
 {
@@ -7,16 +6,20 @@ namespace GreenEye.Service.IService
     {
         Task<GeneralResponse<string>> RegisterAsync(RegisterDto model);
 
-        Task<GeneralResponse<string>> VerifyOTP(VerifyOtpDto verifyOtpDto);
+        Task<GeneralResponse<AuthResponse>> VerifyOTP(VerifyOtpDto verifyOtpDto);
 
-        Task<GeneralResponse<string>> CreateUserAsync();
+        Task<GeneralResponse<AuthResponse>> CreateUserAsync();
 
         Task<bool> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
 
         Task<GeneralResponse<string>> ForgetPassword(string email);
 
-        Task<GeneralResponse<string>> Login(LoginDto loginDTO);
+        Task<GeneralResponse<AuthResponse>> Login(LoginDto loginDTO);
 
         Task<GeneralResponse<string>> ResendOtpAsync(ResendOtpDto resendOtpDto);
+
+        Task<GeneralResponse<string>> RevokeTokenAsync(string token);
+
+        Task<GeneralResponse<AuthResponse>> RefreshTokenAsync(string token);
     }
 }

@@ -1,5 +1,4 @@
-﻿using GreenEye.Service.IService;
-using System.Net.Mail;
+﻿using System.Net.Mail;
 using System.Net;
 
 namespace GreenEye.Service

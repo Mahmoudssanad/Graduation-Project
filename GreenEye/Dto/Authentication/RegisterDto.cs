@@ -1,5 +1,4 @@
-﻿using GreenEye.Enums;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace GreenEye.Dto.Authentication
 {
@@ -11,8 +10,7 @@ namespace GreenEye.Dto.Authentication
         public string? Name { get; set; }
 
         [Required]
-        [MaxLength(11)]
-        [MinLength(11)]
+        [RegularExpression(@"^\d{11}$", ErrorMessage = "Phone number must be 11 number")]
         public string? Phone { get; set; }
 
         [Required]
@@ -20,8 +18,16 @@ namespace GreenEye.Dto.Authentication
         public string? Email { get; set; }
 
         [Required]
+        [MaxLength(255)]
+        public string? Address { get; set; }
+
+        [Required]
         [DataType(DataType.Password)]
         public string? Password { get; set; }
+
+        [Required]
+        [Compare("Password")]
+        public string? ConfirmPassword { get; set; }
 
         [Required]
         public Roles Roles {  get; set; }

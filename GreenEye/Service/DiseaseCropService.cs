@@ -1,4 +1,5 @@
 ﻿using GreenEye.Dto.Disease;
+using GreenEye.Dto.Responses;
 using System.Text;
 
 namespace GreenEye.Service

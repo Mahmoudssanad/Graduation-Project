@@ -1,4 +1,6 @@
-﻿namespace GreenEye.Service.IService
+﻿using GreenEye.Dto.Responses;
+
+namespace GreenEye.Service.IService
 {
     public interface IOtpService
     {
