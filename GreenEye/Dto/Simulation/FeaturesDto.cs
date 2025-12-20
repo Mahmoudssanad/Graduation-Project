@@ -2,6 +2,10 @@
 {
     public class FeaturesDto
     {
+        [JsonPropertyName("year")]
+        public int? Year { get; set; }
+        [JsonPropertyName("month")]
+        public int? Month { get; set; }
         [JsonPropertyName("sand")]
         public double? Sand { get; set; }
         [JsonPropertyName("silt")]
