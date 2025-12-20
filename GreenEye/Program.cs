@@ -1,21 +1,139 @@
+using GreenEye.CustomValidation;
+using GreenEye.Data.Seeder;
+using GreenEye.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+#region Add services to container
+
+// Disable for auto ModelState validation
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true);
+
+// register DbContext
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// register Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(x => 
+    x.User.AllowedUserNameCharacters = null!)
+    .AddUserValidator<UserValidator>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+// register HttpContextAccessor => Services ÃÊ« «· session and claims ⁄·‘«‰ «ﬁœ— « ⁄«„· „⁄ «· 
+builder.Services.AddHttpContextAccessor();
+
+// Create Logger
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .MinimumLevel.Information()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.Console()
+    .CreateLogger();
+
+
+// Register Authentication => Session by default ⁄·‘«‰ »Ì⁄ „œ ⁄·Ì «· 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateAudience = true,
+        ValidateIssuer = true,
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+        ValidateIssuerSigningKey = true,
+        ValidAudience = builder.Configuration["JWTAuthentication:Audience"],
+        // Token œ« «··Ì ÂÌ ›ﬂ »ÌÂ «· 
+        ValidIssuer = builder.Configuration["JWTAuthentication:Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["JWTAuthentication:Key"]!)),
+        ClockSkew = TimeSpan.FromMinutes(1)
+    };
+});
+
+
+// register core(define who can be use me)
+builder.Services.AddCors(builder =>
+{
+    builder.AddDefaultPolicy(options =>
+    {
+        options.AllowAnyHeader()
+        .AllowAnyMethod()
+        .SetIsOriginAllowed(origins => true)
+        .AllowCredentials();
+    });
+});
+
+// register redis cache
+builder.Services.AddMemoryCache();
+//builder.Services.AddStackExchangeRedisCache(options =>
+//{
+//    options.Configuration = "localhost:6379";
+//});
+
+// register services
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<ISimulationService, SimulationService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<ICropDiseaseService, CropDiseaseService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpClient<SimulationService>();
+
+builder.Host.UseSerilog();
+
+
+#endregion
+
+
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+try
+{
+    app.UseCors();
 
-app.UseAuthorization();
+    // Ì ﬁ›· »„Ã—œ Œ—ÊÃ «· „‰Â« Scoped ⁄·‘«‰ «· using «” Œœ„‰« 
+    using (var scope = app.Services.CreateScope())
+    {
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        await SeedRole.SeedRolesAsync(roleManager);
+    }
 
-app.MapControllers();
+    using (var scope = app.Services.CreateAsyncScope())
+    {
+        var user = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        await SeedAdmin.SeedAdminAsync(user);
+    }
 
-app.Run();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+    app.UseMiddleware<GlobalExceptionHandler>();
+    app.UseHttpsRedirection();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.Run();
+}catch(Exception ex)
+{
+    Log.Error(ex.Message);
+}
+
