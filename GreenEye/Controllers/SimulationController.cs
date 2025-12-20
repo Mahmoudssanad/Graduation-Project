@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using GreenEye.Dto.Responses;
+using System.Threading.Tasks;
 
 namespace GreenEye.Controllers
 {

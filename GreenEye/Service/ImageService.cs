@@ -1,4 +1,6 @@
 ﻿
+using GreenEye.Dto.Responses;
+
 namespace GreenEye.Service
 {
     public class ImageService(IWebHostEnvironment _webHost, IHttpContextAccessor _httpContext) : IImageService

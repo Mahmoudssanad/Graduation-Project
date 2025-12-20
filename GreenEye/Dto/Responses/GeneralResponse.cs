@@ -1,4 +1,4 @@
-﻿namespace GreenEye.Dto
+﻿namespace GreenEye.Dto.Responses
 {
     public class GeneralResponse<T>
     {

@@ -2,7 +2,9 @@ using GreenEye.CustomValidation;
 using GreenEye.Data.Seeder;
 using GreenEye.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,14 +45,19 @@ builder.Services.AddAuthentication(options =>
 }).AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+    options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateAudience = true,
         ValidateIssuer = true,
         ValidateLifetime = true,
         RequireExpirationTime = true,
         ValidateIssuerSigningKey = true,
-        ValidAudience = ""
+        ValidAudience = builder.Configuration["JWTAuthentication:Audience"],
+        // Token ÏÇ Çááí åíÊÝß Èíå Çá 
+        ValidIssuer = builder.Configuration["JWTAuthentication:Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["JWTAuthentication:Key"]!)),
+        ClockSkew = TimeSpan.FromMinutes(1)
     };
 });
 
@@ -68,10 +75,11 @@ builder.Services.AddCors(builder =>
 });
 
 // register redis cache
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = "localhost:6379";
-});
+builder.Services.AddMemoryCache();
+//builder.Services.AddStackExchangeRedisCache(options =>
+//{
+//    options.Configuration = "localhost:6379";
+//});
 
 // register services
 builder.Services.AddScoped<IEmailService, EmailService>();
