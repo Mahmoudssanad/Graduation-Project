@@ -89,8 +89,8 @@ namespace GreenEye.Controllers
         [HttpPost("revoke-token")]
         public async Task<ActionResult<GeneralResponse<string>>> RevokeToken([FromBody] RevokeToken revokeTokenModel)
         {
-            //if (!ModelState.IsValid)
-            //    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
             var token = revokeTokenModel.Token ?? Request.Cookies["refreshToken"];
             if (string.IsNullOrEmpty(token))
