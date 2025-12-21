@@ -1,11 +1,13 @@
 ﻿using GreenEye.Dto.Disease;
 using GreenEye.Dto.Responses;
+using System.Globalization;
+using System.Text;
 
 namespace GreenEye.Service
 {
     public class CropDiseaseService(IImageService _imageService, HttpClient _httpClient, IConfiguration _config, AppDbContext _context) : ICropDiseaseService
     {
-        public async Task<GeneralResponse<CropDiseaseModelResponseDto>> GetDiseaseFromModelByImage(IFormFile image)
+        public async Task<GeneralResponse<CropDiseaseModelResponseDto>> GetDiseaseFromModelByImage(IFormFile image, string userId)
         {
             // Bytes الي مجموعه من ال IFormFile بنعمل استريمينج علشان نحول الصوره من 
             // MemoryStream => مكان بنخزن فيه بيانات الصوره في الميموري علي هيئه اصفار ووحايد 
@@ -28,21 +30,34 @@ namespace GreenEye.Service
 
             // upload image
             var imagePath = await _imageService.UploadImage(image);
-            var content = await response.Content.ReadAsStringAsync();
 
+            // Deserialize response
+            var content = await response.Content.ReadAsStringAsync(); 
             // CropDiseaseModelResponseDto من object الي content لل Deserialize هنعمل 
             var result = JsonSerializer.Deserialize<CropDiseaseModelResponseDto>(content);
+
+            var confidenceValue = 0.0;
+
+            if (!string.IsNullOrEmpty(result.Confidence))
+            {
+                confidenceValue = double.Parse(
+                    result.Confidence.Replace("%", ""),
+                    CultureInfo.InvariantCulture
+                );
+            }
 
             // Save in database
             var cropDisease = new CropDiseaseHistory
             {
-                //ImageUrl = imagePath.Data,
-                Cause = result!.Cause,
-                PeakSeason = result.PeakSeason,
-                PredicatedDisease = result.PredicatedDisease,
-                Remedy = result.Remedy,
+                UserId = userId,                 
+                ImageUrl = imagePath.Data,       // الصورة عشان تظهر في History
+                PredicatedDisease = result!.PredicatedDisease!,
+                Cause = result.Cause!,
+                PeakSeason = result.PeakSeason!,
+                Remedy = result.Remedy!,
+                Confidence = confidenceValue,
                 SentAt = DateTime.Now,
-                Confidence = result.Confidence
+                IsDeleted = false                
             };
             await _context.CropDiseaseHistories.AddAsync(cropDisease);
             await _context.SaveChangesAsync();
@@ -50,5 +65,84 @@ namespace GreenEye.Service
             return new GeneralResponse<CropDiseaseModelResponseDto> { IsSuccess = true, Data = result };
 
         }
+
+
+
+        public async Task<GeneralResponse<List<CropDiseaseHistoryDto>>> GetUserHistoryAsync(string userId)
+        {
+            try
+            {
+                var history = await _context.CropDiseaseHistories
+                    .Where(h => h.UserId == userId && !h.IsDeleted)  // المستخدم الحالي وكل اللي مش ممسوح
+                    .OrderByDescending(h => h.SentAt)             // بيعرض الجديد الاول
+                    .Select(h => new CropDiseaseHistoryDto       // تحويل للـ DTO للعرض
+                    {
+                        Id = h.Id,
+                        ImageUrl = h.ImageUrl,
+                        PredicatedDisease = h.PredicatedDisease,
+                        Cause = h.Cause,
+                        PeakSeason = h.PeakSeason,
+                        Remedy = h.Remedy,
+                        Confidence = h.Confidence,
+                        SentAt = h.SentAt
+                    })
+                    .ToListAsync();
+
+                return new GeneralResponse<List<CropDiseaseHistoryDto>>
+                {
+                    IsSuccess = true,
+                    Data = history
+                };
+            }
+            catch (Exception ex)
+            {
+                return new GeneralResponse<List<CropDiseaseHistoryDto>>
+                {
+                    IsSuccess = false,
+                    Message = $"Error fetching history: {ex.Message}"
+                };
+            }
+        }
+
+
+        public async Task<GeneralResponse<bool>> DeleteHistoryAsync(int historyId, string userId)
+        {
+            try
+            {
+                var history = await _context.CropDiseaseHistories
+                    .FirstOrDefaultAsync(h => h.Id == historyId && h.UserId == userId);
+
+                if (history == null)
+                {
+                    return new GeneralResponse<bool>
+                    {
+                        IsSuccess = false,
+                        Message = "History item not found or does not belong to the user."
+                    };
+                }
+
+                // Soft Delete
+                history.IsDeleted = true;
+                _context.CropDiseaseHistories.Update(history);
+                await _context.SaveChangesAsync();
+
+                return new GeneralResponse<bool>
+                {
+                    IsSuccess = true,
+                    Data = true
+                };
+            }
+            catch (Exception ex)
+            {
+                return new GeneralResponse<bool>
+                {
+                    IsSuccess = false,
+                    Message = $"Error deleting history: {ex.Message}"
+                };
+            }
+        }
+
+
+
     }
 }
