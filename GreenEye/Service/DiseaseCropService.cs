@@ -1,7 +1,6 @@
 ﻿using GreenEye.Dto.Disease;
 using GreenEye.Dto.Responses;
 using System.Globalization;
-using System.Text;
 
 namespace GreenEye.Service
 {
@@ -26,7 +25,8 @@ namespace GreenEye.Service
             var response = await _httpClient.PostAsync(_config["ExternalApis:CropDiseaseModelApi"], form);
 
             if (!response.IsSuccessStatusCode)
-                return new GeneralResponse<CropDiseaseModelResponseDto> { IsSuccess = false, Message = $"Error occurred for calling model API, StatusCode: {response.StatusCode}" };
+                return new GeneralResponse<CropDiseaseModelResponseDto>
+                { IsSuccess = false, Message = $"Error occurred for calling model API, StatusCode: {response.StatusCode}" };
 
             // upload image
             var imagePath = await _imageService.UploadImage(image);
@@ -38,7 +38,7 @@ namespace GreenEye.Service
 
             var confidenceValue = 0.0;
 
-            if (!string.IsNullOrEmpty(result.Confidence))
+            if (!string.IsNullOrEmpty(result!.Confidence))
             {
                 confidenceValue = double.Parse(
                     result.Confidence.Replace("%", ""),
@@ -50,7 +50,7 @@ namespace GreenEye.Service
             var cropDisease = new CropDiseaseHistory
             {
                 UserId = userId,                 
-                ImageUrl = imagePath.Data,       // الصورة عشان تظهر في History
+                ImageUrl = imagePath.Data!,       // History الصورة عشان تظهر في 
                 PredicatedDisease = result!.PredicatedDisease!,
                 Cause = result.Cause!,
                 PeakSeason = result.PeakSeason!,
@@ -59,14 +59,13 @@ namespace GreenEye.Service
                 SentAt = DateTime.Now,
                 IsDeleted = false                
             };
+
             await _context.CropDiseaseHistories.AddAsync(cropDisease);
             await _context.SaveChangesAsync();
 
             return new GeneralResponse<CropDiseaseModelResponseDto> { IsSuccess = true, Data = result };
 
         }
-
-
 
         public async Task<GeneralResponse<List<CropDiseaseHistoryDto>>> GetUserHistoryAsync(string userId)
         {
@@ -104,7 +103,6 @@ namespace GreenEye.Service
             }
         }
 
-
         public async Task<GeneralResponse<bool>> DeleteHistoryAsync(int historyId, string userId)
         {
             try
@@ -141,8 +139,5 @@ namespace GreenEye.Service
                 };
             }
         }
-
-
-
     }
 }

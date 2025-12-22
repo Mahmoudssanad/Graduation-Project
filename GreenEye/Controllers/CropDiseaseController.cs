@@ -1,7 +1,4 @@
-﻿using GreenEye.Dto.Disease;
-using GreenEye.Service.IService;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
 namespace GreenEye.Controllers
@@ -21,6 +18,9 @@ namespace GreenEye.Controllers
         [HttpPost]
         public async Task<IActionResult> CropDisease(IFormFile image)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             if (image == null || image.Length == 0)
                 return BadRequest(new { Message = "Please upload a valid image." });
 
@@ -29,7 +29,7 @@ namespace GreenEye.Controllers
                 // UserId من الـ Token
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                var result = await _cropDiseaseService.GetDiseaseFromModelByImage(image, userId);
+                var result = await _cropDiseaseService.GetDiseaseFromModelByImage(image, userId!);
 
                 if (!result.IsSuccess)
                     return BadRequest(result);
@@ -40,10 +40,7 @@ namespace GreenEye.Controllers
             {
                 return StatusCode(500, new { Message = $"Internal server error: {ex.Message}" });
             }
-
-
         }
-
 
         [HttpGet("history")]
         public async Task<IActionResult> GetHistory()
@@ -52,7 +49,7 @@ namespace GreenEye.Controllers
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                var result = await _cropDiseaseService.GetUserHistoryAsync(userId);
+                var result = await _cropDiseaseService.GetUserHistoryAsync(userId!);
 
                 if (!result.IsSuccess)
                     return BadRequest(result);
@@ -65,15 +62,14 @@ namespace GreenEye.Controllers
             }
         }
 
-
-        [HttpDelete("history/{id}")]
+        [HttpDelete("delete-history/{id}")]
         public async Task<IActionResult> DeleteHistory(int id)
         {
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                var result = await _cropDiseaseService.DeleteHistoryAsync(id, userId);
+                var result = await _cropDiseaseService.DeleteHistoryAsync(id, userId!);
 
                 if (!result.IsSuccess)
                     return BadRequest(result);

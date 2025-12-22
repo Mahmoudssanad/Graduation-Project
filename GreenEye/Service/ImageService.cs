@@ -1,14 +1,16 @@
-﻿
-using GreenEye.Dto.Responses;
+﻿using GreenEye.Dto.Responses;
 
 namespace GreenEye.Service
 {
     public class ImageService(IWebHostEnvironment _webHost, IHttpContextAccessor _httpContext) : IImageService
     {
-        // Convert image name to url 
+        // Convert image name to url( يقدر يتعامل معها ويظهرها client side علشان ال )
         private string GenerateFileUrl(string fileName)
         {
             var request = _httpContext.HttpContext?.Request;
+            if (request == null)
+                return string.Empty;
+
             return $"{request?.Scheme}://{request?.Host}/images/{fileName}";
         }
 
@@ -29,13 +31,15 @@ namespace GreenEye.Service
             if (!Directory.Exists(uploadFolder))
                 Directory.CreateDirectory(uploadFolder);
 
+            var fileName = $"{Guid.NewGuid()}{extension}";
+
             var fullPath = Path.Combine(uploadFolder, extension);
 
             using (var stream = new FileStream(fullPath, FileMode.Create))
             {
                 await image.CopyToAsync(stream);
             }
-            return new GeneralResponse<string> { IsSuccess = true, Message = "Image Uploaded!", Data = GenerateFileUrl(extension)};
+            return new GeneralResponse<string> { IsSuccess = true, Message = "Image Uploaded!", Data = GenerateFileUrl(fileName)};
         }
 
         public GeneralResponse<string> RemoveImage(string imagePath)

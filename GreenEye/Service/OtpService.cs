@@ -11,7 +11,7 @@ namespace GreenEye.Service
             try
             {
                 var getOtp = await _context.OTPs.FirstOrDefaultAsync(x => x.Email == email);
-                if(getOtp != null)
+                if(getOtp != null && !getOtp.IsUsed)
                 {
                     getOtp.Code = code;
                     getOtp.IsUsed = false;
@@ -32,12 +32,12 @@ namespace GreenEye.Service
 
                     var createOtp = await _context.OTPs.AddAsync(otp);
                 }
-                await _context.SaveChangesAsync();
                 await _emailService.SendEmailAsync(email, $"{type} Otp", $"Your otp to verfiy email is {code}");
+                await _context.SaveChangesAsync();
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception("Failed to send OTP email", ex);
+                throw new Exception("Failed to send OTP email, Confirm your internet connection");
             }
         }
 

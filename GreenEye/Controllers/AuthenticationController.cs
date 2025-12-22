@@ -27,7 +27,8 @@ namespace GreenEye.Controllers
                 if (!result.IsSuccess)
                     return BadRequest(result);
 
-                SetRefreshTokenInCookie(result.Data!.RefreshToken!, result.Data.RefreshTokenExpiration);
+                if(verifyOtpDto.Type == OtpType.EmailVerification)
+                    SetRefreshTokenInCookie(result.Data!.RefreshToken!, result.Data.RefreshTokenExpiration);
 
                 return Ok(result);
             }

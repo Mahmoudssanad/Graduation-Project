@@ -8,7 +8,7 @@
       "applicationUrl": "http://localhost:5137",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      },
+      }
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5137",
       "launchUrl": "Swagger",

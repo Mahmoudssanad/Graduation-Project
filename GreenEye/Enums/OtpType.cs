@@ -3,6 +3,6 @@
     public enum OtpType
     {
         EmailVerification = 1,
-        ResetPassword
+        ResetPassword = 2
     }
 }

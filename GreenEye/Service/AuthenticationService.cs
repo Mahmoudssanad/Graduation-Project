@@ -105,7 +105,7 @@ namespace GreenEye.Service
                 {
                     await _otpService.RemoveOtp(verifyOtpDto.Email!, verifyOtpDto.Code!);
                     await transaction.CommitAsync();
-                    return new GeneralResponse<AuthResponse> { IsSuccess = true, Message = "Verfiy email for reset password successfully" };
+                    return new GeneralResponse<AuthResponse> { IsSuccess = true, Message = "Verfiy email for reset password successfully", Data = null};
                 }
                 return new GeneralResponse<AuthResponse>
                 {
